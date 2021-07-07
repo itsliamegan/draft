@@ -2,12 +2,13 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"log"
 	"mime"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"regexp"
 )
 
@@ -24,24 +25,70 @@ func (h *fileServerHandler) ServeHTTP(res http.ResponseWriter, req *http.Request
 	// Note: not secure and prone to path manipulation attacks. Since it's a
 	// development server, that's not particularly important, but it's worth
 	// examining in the future.
-	file := path.Join(h.root, req.URL.Path)
-	ext := path.Ext(file)
+	path := filepath.Join(h.root, req.URL.Path)
+	stat, err := os.Stat(path)
 
-	b, err := os.ReadFile(file)
-	if os.IsNotExist(err) {
+	res.Header().Set("Cache-Control", "no-cache")
+
+	if errors.Is(err, os.ErrNotExist) {
 		http.NotFound(res, req)
-		return
 	} else if err != nil {
+		log.Fatal(err)
+	} else if stat.IsDir() {
+		h.serveDir(path, res, req)
+	} else {
+		h.serveFile(path, res, req)
+	}
+}
+
+func (h *fileServerHandler) serveDir(dir string, res http.ResponseWriter, req *http.Request) {
+	entries, err := os.ReadDir(dir)
+
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	if ext == ".html" {
-		b = injectClientScripts(b)
+	res.Header().Set("Content-Type", "text/html; charset=utf-8")
+	res.Write([]byte("<table style=\"font-family: monospace;\"><tbody>"))
+
+	for _, entry := range entries {
+		relativePath, err := filepath.Rel(h.root, filepath.Join(dir, entry.Name()))
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var displayName string
+
+		if entry.IsDir() {
+			displayName = entry.Name() + "/"
+		} else {
+			displayName = entry.Name()
+		}
+
+		res.Write([]byte("<tr><td>"))
+		anchor := fmt.Sprintf("<a href=\"%s\">%s</a>", relativePath, displayName)
+		res.Write([]byte(anchor))
+		res.Write([]byte("</td></tr>"))
+	}
+}
+
+func (h *fileServerHandler) serveFile(file string, res http.ResponseWriter, req *http.Request) {
+	b, err := os.ReadFile(file)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	res.Header().Set("Cache-Control", "no-cache")
-	res.Header().Set("Content-Type", mime.TypeByExtension(ext))
-	res.Header().Set("Content-Length", fmt.Sprint(len(b)))
+	ext := filepath.Ext(file)
+	mimeType := mime.TypeByExtension(ext)
+
+	if mimeType == "text/html" {
+		b = injectClientScripts(b)
+	} else if mimeType == "" {
+		mimeType = "text/plain"
+	}
+
+	res.Header().Set("Content-Type", fmt.Sprintf("%s; charset=utf-8", mimeType))
 	res.Write(b)
 }
 
