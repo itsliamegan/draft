@@ -9,7 +9,7 @@ class Client {
   start() {
     this.events.addEventListener("message", event => {
       let message = JSON.parse(event.data)
-      this.notifyApplicableOf(message)
+      this.notifyListenersOf(message)
     })
   }
 
@@ -21,22 +21,22 @@ class Client {
     this.listeners.push(listener)
   }
 
-  notifyApplicableOf(message) {
+  notifyListenersOf(message) {
     for (let listener of this.listeners) {
-      if (listener.isApplicableTo(message)) {
-        listener.onMessage.bind(listener)(message)
+      if (listener.wants(message)) {
+        listener.receive.bind(listener)(message)
       }
     }
   }
 }
 
 class DocumentUpdateListener {
-  onMessage(message) {
+  receive(message) {
     let newDocument = parseHTML(message.contents)
     morphdom(document.body, newDocument.body)
   }
 
-  isApplicableTo(message) {
+  wants(message) {
     return (
       this.isDocumentUpdate(message) &&
       this.isUpdateToCurrentDocument(message)
@@ -53,7 +53,7 @@ class DocumentUpdateListener {
 }
 
 class StylesheetUpdateListener {
-  onMessage(message) {
+  receive(message) {
     for (let oldLink of this.stylesheetLinks) {
       let parent = oldLink.parentNode
       let newLink = oldLink.cloneNode()
@@ -67,7 +67,7 @@ class StylesheetUpdateListener {
     }
   }
 
-  isApplicableTo(message) {
+  wants(message) {
     return this.isStylesheetUpdate(message)
   }
 
