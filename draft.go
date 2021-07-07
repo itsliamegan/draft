@@ -17,7 +17,6 @@ func main() {
 	flag.UintVar(&port, "port", 4000, "port to serve files from; port + 1 must also be available")
 	flag.Parse()
 
-
 	var root string
 	var err error
 
@@ -34,7 +33,7 @@ func main() {
 
 	go Serve(root, port)
 	go Watch(root, changes)
-	go Announce(changes, port + 1)
+	go Announce(changes, port+1)
 
 	// Idle the process until manually cancelled.
 	<-make(chan bool)
