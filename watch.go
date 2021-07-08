@@ -14,10 +14,8 @@ func Watch(dir string, changes chan Change) {
 		diff, err := newState.Diff(oldState)
 		ExitIf(err)
 
-		if len(diff) != 0 {
-			for _, change := range diff {
-				changes <- change
-			}
+		for _, change := range diff {
+			changes <- change
 		}
 
 		oldState = newState
