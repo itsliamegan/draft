@@ -34,6 +34,7 @@ class DocumentUpdateListener {
   receive(message) {
     let newDocument = parseHTML(message.contents)
     morphdom(document.body, newDocument.body)
+    document.head = newDocument.head
   }
 
   wants(message) {
