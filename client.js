@@ -58,7 +58,7 @@ class StylesheetUpdateListener {
       let parent = oldLink.parentNode
       let newLink = oldLink.cloneNode()
 
-      newLink.href = oldLink.href.replace(/\?.*|$/, "?revision=" + Date.now())
+      newLink.href = oldLink.href.replace(/\?.*|$/, `?revision=${Date.now()}`)
       newLink.addEventListener("load", () => {
         oldLink.remove()
       })
