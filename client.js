@@ -24,7 +24,7 @@ class Client {
   notifyListenersOf(message) {
     for (let listener of this.listeners) {
       if (listener.wants(message)) {
-        listener.receive.bind(listener)(message)
+        listener.receive(message)
       }
     }
   }
