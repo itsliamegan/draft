@@ -45,11 +45,11 @@ class DocumentUpdateListener {
   }
 
   isDocumentUpdate(message) {
-    return message.type === "document"
+    return message.mimeType == "text/html"
   }
 
   isUpdateToCurrentDocument(message) {
-    return message.file == location.pathname.substring(1)
+    return message.filename == location.pathname.substring(1)
   }
 }
 
@@ -73,7 +73,7 @@ class StylesheetUpdateListener {
   }
 
   isStylesheetUpdate(message) {
-    return message.type == "stylesheet"
+    return message.mimeType == "text/css"
   }
 
   get stylesheetLinks() {

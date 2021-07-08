@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 )
@@ -14,17 +15,10 @@ type Snapshot struct {
 }
 
 type Change struct {
-	File     string   `json:"file"`
-	Type     FileType `json:"type"`
-	Contents string   `json:"contents"`
+	Filename string `json:"filename"`
+	MimeType string `json:"mimeType"`
+	Contents string `json:"contents"`
 }
-
-type FileType string
-
-const (
-	DocumentFileType   FileType = "document"
-	StylesheetFileType          = "stylesheet"
-)
 
 type signature []byte
 
@@ -57,7 +51,7 @@ func (old *Snapshot) Diff(new *Snapshot) ([]Change, error) {
 	changes := make([]Change, 0)
 
 	for file, sig := range old.states {
-		if !bytes.Equal(sig, new.states[file]) {
+		if !sig.equal(new.states[file]) {
 			b, err := os.ReadFile(file)
 			if err != nil {
 				return nil, err
@@ -65,13 +59,17 @@ func (old *Snapshot) Diff(new *Snapshot) ([]Change, error) {
 			contents := string(b)
 
 			basename := filepath.Base(file)
+			mimeType := mime.TypeByExtension(file)
 
-			change := Change{File: basename, Type: typeOf(file), Contents: contents}
-			changes = append(changes, change)
+			changes = append(changes, Change{Filename: basename, MimeType: mimeType, Contents: contents})
 		}
 	}
 
 	return changes, nil
+}
+
+func (sig signature) equal(other signature) bool {
+	return bytes.Equal(sig, other)
 }
 
 func hash(file string) (s signature, err error) {
@@ -88,17 +86,6 @@ func hash(file string) (s signature, err error) {
 	}
 
 	return h.Sum(nil), nil
-}
-
-func typeOf(file string) FileType {
-	switch filepath.Ext(file) {
-	case ".html":
-		return DocumentFileType
-	case ".css":
-		return StylesheetFileType
-	default:
-		return ""
-	}
 }
 
 func isRelevant(file string) bool {
