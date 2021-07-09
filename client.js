@@ -35,7 +35,6 @@ class Browser {
 
   load(newDocument) {
     morphdom(document.body, newDocument.body)
-    document.head = newDocument.head
   }
 
   get stylesheets() {
