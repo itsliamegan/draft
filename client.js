@@ -8,8 +8,8 @@ class Client {
 
   start() {
     this.events.addEventListener("message", event => {
-      let message = JSON.parse(event.data)
-      this.notifyListenersOf(message)
+      let change = JSON.parse(event.data)
+      this.notifyListenersOf(change)
     })
   }
 
@@ -21,63 +21,92 @@ class Client {
     this.listeners.push(listener)
   }
 
-  notifyListenersOf(message) {
+  notifyListenersOf(change) {
     for (let listener of this.listeners) {
-      if (listener.wants(message)) {
-        listener.receive(message)
+      if (listener.wants(change)) {
+        listener.receive(change)
       }
     }
   }
 }
 
-class DocumentUpdateListener {
-  receive(message) {
-    let newDocument = parseHTML(message.contents)
+class Browser {
+  static STYLESHEET_LINKS_SELECTOR = "link[rel=stylesheet]"
+
+  load(newDocument) {
     morphdom(document.body, newDocument.body)
     document.head = newDocument.head
   }
 
-  wants(message) {
-    return (
-      this.isDocumentUpdate(message) &&
-      this.isUpdateToCurrentDocument(message)
+  get stylesheets() {
+    let links = document.querySelectorAll(STYLESHEET_LINKS_SELECTOR)
+    let stylesheets = links.map(link => new Stylesheet(link))
+
+    return stylesheets
+  }
+}
+
+class Stylesheet {
+  static EXISTING_QUERY_OR_NO_QUERY_PATTERN = /\?.*|$/
+
+  constructor(element) {
+    this.element = element
+  }
+
+  refresh() {
+    let query = `?revision=${Date.now()}`
+
+    this.element.href = this.element.href.replace(
+      Stylesheet.EXISTING_QUERY_OR_NO_QUERY_PATTERN,
+      query
     )
   }
 
-  isDocumentUpdate(message) {
-    return message.mimeType == "text/html"
+}
+
+class DocumentUpdateListener {
+  constructor(browser) {
+    this.browser = browser
   }
 
-  isUpdateToCurrentDocument(message) {
-    return message.filename == location.pathname.substring(1)
+  receive(change) {
+    let newDocument = parseHTML(change.contents)
+    this.browser.load(newDocument)
+  }
+
+  wants(change) {
+    return (
+      this.isDocumentUpdate(change) &&
+      this.isUpdateToCurrentDocument(change)
+    )
+  }
+
+  isDocumentUpdate(change) {
+    return change.mimeType == "text/html"
+  }
+
+  isUpdateToCurrentDocument(change) {
+    return change.filename == location.pathname.substring(1)
   }
 }
 
 class StylesheetUpdateListener {
-  receive(message) {
-    for (let oldLink of this.stylesheetLinks) {
-      let parent = oldLink.parentNode
-      let newLink = oldLink.cloneNode()
+  constructor(browser) {
+    this.browser = browser
+  }
 
-      newLink.href = oldLink.href.replace(/\?.*|$/, `?revision=${Date.now()}`)
-      newLink.addEventListener("load", () => {
-        oldLink.remove()
-      })
-
-      parent.appendChild(newLink)
+  receive(change) {
+    for (let stylesheet of this.browser.stylesheets) {
+      stylesheet.refresh()
     }
   }
 
-  wants(message) {
-    return this.isStylesheetUpdate(message)
+  wants(change) {
+    return this.isStylesheetUpdate(change)
   }
 
-  isStylesheetUpdate(message) {
-    return message.mimeType == "text/css"
-  }
-
-  get stylesheetLinks() {
-    return document.querySelectorAll("link[rel=stylesheet]")
+  isStylesheetUpdate(change) {
+    return change.mimeType == "text/css"
   }
 }
 
@@ -91,9 +120,10 @@ let eventsURL = new URL(location.origin)
 eventsURL.port = Number.parseInt(eventsURL.port) + 1
 let changeEvents = new EventSource(eventsURL, {withCredentials: true})
 
+let browser = new Browser()
 let client = new Client(changeEvents)
-client.addListener(new DocumentUpdateListener())
-client.addListener(new StylesheetUpdateListener())
+client.addListener(new DocumentUpdateListener(browser))
+client.addListener(new StylesheetUpdateListener(browser))
 
 client.start()
 addEventListener("beforeunload", () => {
