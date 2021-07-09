@@ -1,118 +1,118 @@
 import morphdom from "https://cdn.skypack.dev/morphdom"
 
 class Client {
-  constructor(events) {
-    this.events = events
-    this.listeners = []
-  }
+	constructor(events) {
+		this.events = events
+		this.listeners = []
+	}
 
-  start() {
-    this.events.addEventListener("message", event => {
-      let change = JSON.parse(event.data)
-      this.notifyListenersOf(change)
-    })
-  }
+	start() {
+		this.events.addEventListener("message", event => {
+			let change = JSON.parse(event.data)
+			this.notifyListenersOf(change)
+		})
+	}
 
-  stop() {
-    this.events.close()
-  }
+	stop() {
+		this.events.close()
+	}
 
-  addListener(listener) {
-    this.listeners.push(listener)
-  }
+	addListener(listener) {
+		this.listeners.push(listener)
+	}
 
-  notifyListenersOf(change) {
-    for (let listener of this.listeners) {
-      if (listener.wants(change)) {
-        listener.receive(change)
-      }
-    }
-  }
+	notifyListenersOf(change) {
+		for (let listener of this.listeners) {
+			if (listener.wants(change)) {
+				listener.receive(change)
+			}
+		}
+	}
 }
 
 class Browser {
-  static STYLESHEET_LINKS_SELECTOR = "link[rel=stylesheet]"
+	static STYLESHEET_LINKS_SELECTOR = "link[rel=stylesheet]"
 
-  load(newDocument) {
-    morphdom(document.body, newDocument.body)
-  }
+	load(newDocument) {
+		morphdom(document.body, newDocument.body)
+	}
 
-  get stylesheets() {
-    let links = document.querySelectorAll(STYLESHEET_LINKS_SELECTOR)
-    let stylesheets = links.map(link => new Stylesheet(link))
+	get stylesheets() {
+		let links = document.querySelectorAll(STYLESHEET_LINKS_SELECTOR)
+		let stylesheets = links.map(link => new Stylesheet(link))
 
-    return stylesheets
-  }
+		return stylesheets
+	}
 }
 
 class Stylesheet {
-  static EXISTING_QUERY_OR_NO_QUERY_PATTERN = /\?.*|$/
+	static EXISTING_QUERY_OR_NO_QUERY_PATTERN = /\?.*|$/
 
-  constructor(element) {
-    this.element = element
-  }
+	constructor(element) {
+		this.element = element
+	}
 
-  refresh() {
-    let query = `?revision=${Date.now()}`
+	refresh() {
+		let query = `?revision=${Date.now()}`
 
-    this.element.href = this.element.href.replace(
-      Stylesheet.EXISTING_QUERY_OR_NO_QUERY_PATTERN,
-      query
-    )
-  }
+		this.element.href = this.element.href.replace(
+			Stylesheet.EXISTING_QUERY_OR_NO_QUERY_PATTERN,
+			query
+		)
+	}
 
 }
 
 class DocumentUpdateListener {
-  constructor(browser) {
-    this.browser = browser
-  }
+	constructor(browser) {
+		this.browser = browser
+	}
 
-  receive(change) {
-    let newDocument = parseHTML(change.contents)
-    this.browser.load(newDocument)
-  }
+	receive(change) {
+		let newDocument = parseHTML(change.contents)
+		this.browser.load(newDocument)
+	}
 
-  wants(change) {
-    return (
-      this.isDocumentUpdate(change) &&
-      this.isUpdateToCurrentDocument(change)
-    )
-  }
+	wants(change) {
+		return (
+			this.isDocumentUpdate(change) &&
+			this.isUpdateToCurrentDocument(change)
+		)
+	}
 
-  isDocumentUpdate(change) {
-    return change.mimeType.startsWith("text/html")
-  }
+	isDocumentUpdate(change) {
+		return change.mimeType.startsWith("text/html")
+	}
 
-  isUpdateToCurrentDocument(change) {
-    return change.filename == location.pathname.substring(1)
-  }
+	isUpdateToCurrentDocument(change) {
+		return change.filename == location.pathname.substring(1)
+	}
 }
 
 class StylesheetUpdateListener {
-  constructor(browser) {
-    this.browser = browser
-  }
+	constructor(browser) {
+		this.browser = browser
+	}
 
-  receive(change) {
-    for (let stylesheet of this.browser.stylesheets) {
-      stylesheet.refresh()
-    }
-  }
+	receive(change) {
+		for (let stylesheet of this.browser.stylesheets) {
+			stylesheet.refresh()
+		}
+	}
 
-  wants(change) {
-    return this.isStylesheetUpdate(change)
-  }
+	wants(change) {
+		return this.isStylesheetUpdate(change)
+	}
 
-  isStylesheetUpdate(change) {
-    return change.mimeType.startsWith("text/css")
-  }
+	isStylesheetUpdate(change) {
+		return change.mimeType.startsWith("text/css")
+	}
 }
 
 function parseHTML(html) {
-  let domParser = new DOMParser()
+	let domParser = new DOMParser()
 
-  return domParser.parseFromString(html, "text/html")
+	return domParser.parseFromString(html, "text/html")
 }
 
 let eventsURL = new URL(location.origin)
@@ -126,5 +126,5 @@ client.addListener(new StylesheetUpdateListener(browser))
 
 client.start()
 addEventListener("beforeunload", () => {
-  client.stop()
+	client.stop()
 })
