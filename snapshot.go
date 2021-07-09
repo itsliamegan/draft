@@ -59,7 +59,8 @@ func (old *Snapshot) Diff(new *Snapshot) ([]Change, error) {
 			contents := string(b)
 
 			basename := filepath.Base(file)
-			mimeType := mime.TypeByExtension(file)
+			ext := filepath.Ext(file)
+			mimeType := mime.TypeByExtension(ext)
 
 			changes = append(changes, Change{Filename: basename, MimeType: mimeType, Contents: contents})
 		}
