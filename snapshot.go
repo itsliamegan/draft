@@ -30,18 +30,18 @@ func NewSnapshot(dir string) (*Snapshot, error) {
 	}
 
 	for _, entry := range entries {
-		file := filepath.Join(dir, entry.Name())
+		path := filepath.Join(dir, entry.Name())
 
-		if !isRelevant(file) {
+		if !isRelevant(path) {
 			continue
 		}
 
-		sig, err := hash(file)
+		sig, err := hash(path)
 		if err != nil {
 			return nil, err
 		}
 
-		states[file] = sig
+		states[path] = sig
 	}
 
 	return &Snapshot{dir: dir, states: states}, nil
@@ -88,8 +88,12 @@ func hash(file string) (s signature, err error) {
 	return h.Sum(nil), nil
 }
 
-func isRelevant(file string) bool {
-	if filepath.Base(file)[0:1] == "." {
+func isRelevant(path string) bool {
+	if filepath.Base(path)[0:1] == "." {
+		return false
+	}
+
+	if stat, _ := os.Stat(path); stat.IsDir() {
 		return false
 	}
 
