@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 func Serve(dir string, port uint) {
@@ -82,13 +83,13 @@ func (h *fileServerHandler) serveFile(file string, res http.ResponseWriter, req 
 	ext := filepath.Ext(file)
 	mimeType := mime.TypeByExtension(ext)
 
-	if mimeType == "text/html" {
+	if strings.HasPrefix(mimeType, "text/html") {
 		b = injectClientScripts(b)
 	} else if mimeType == "" {
 		mimeType = "text/plain"
 	}
 
-	res.Header().Set("Content-Type", fmt.Sprintf("%s; charset=utf-8", mimeType))
+	res.Header().Set("Content-Type", mimeType)
 	res.Write(b)
 }
 
