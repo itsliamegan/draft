@@ -82,7 +82,7 @@ class DocumentUpdateListener {
   }
 
   isDocumentUpdate(change) {
-    return change.mimeType == "text/html"
+    return change.mimeType.startsWith("text/html")
   }
 
   isUpdateToCurrentDocument(change) {
@@ -106,7 +106,7 @@ class StylesheetUpdateListener {
   }
 
   isStylesheetUpdate(change) {
-    return change.mimeType == "text/css"
+    return change.mimeType.startsWith("text/css")
   }
 }
 
