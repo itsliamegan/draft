@@ -6,6 +6,8 @@ page when those files change. Similar to many other development tools, but
 distributed as a single binary with no dependencies, and built for markup-first
 projects.
 
+**Disclaimer: Draft is still a prototype, tested mostly by personal use**
+
 ## Installation
 
 1. Clone the repository and `cd` into the directory
@@ -37,23 +39,5 @@ determine if there have been any changes, and passes them to the announcer
 [EventSource][event_source] which is hooked into by the listener
 - The **listener** subscribes to changes from the EventSource and updates the
 page to reflect the changed HTML and CSS
-
-## Caveats
-
-Draft is still a prototype; it hasn't been extensively tested outside of
-personal use. Some common scenarios haven't been implemented yet, and will
-simply crash the program. CPU and filesystem resources, though they've been fine
-in my own usage, might be improperly or excessively used. Security has been
-almost completely ignored, since this is a tool for use on a personal
-development machine.
-
-Known causes of crashes:
-
-- Having a directory present in the target directory
-- Trying to visit the URL of a directory
-
-Known limitations:
-- Changes to the document `<head>`, though they are announced, are not processed
-by the listener
 
 [event_source]: https://developer.mozilla.org/en-US/docs/Web/API/EventSource
