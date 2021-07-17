@@ -23,13 +23,17 @@ type fileServerHandler struct {
 }
 
 func (h *fileServerHandler) ServeHTTP(res http.ResponseWriter, req *http.Request) {
-	// Note: not secure and prone to path manipulation attacks. Since it's a
-	// development server, that's not particularly important, but it's worth
-	// examining in the future.
-	path := filepath.Join(h.root, req.URL.Path)
-	stat, err := os.Stat(path)
-
 	res.Header().Set("Cache-Control", "no-cache")
+
+	path := filepath.Join(h.root, req.URL.Path)
+
+	// Prevent path traversals outside the root.
+	if !strings.HasPrefix(path, h.root) {
+		http.NotFound(res, req)
+		return
+	}
+
+	stat, err := os.Stat(path)
 
 	if errors.Is(err, os.ErrNotExist) {
 		http.NotFound(res, req)
