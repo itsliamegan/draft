@@ -1,4 +1,4 @@
-import morphdom from "https://cdn.skypack.dev/morphdom"
+import { Idiomorph } from "https://ga.jspm.io/npm:idiomorph@0.7.4/dist/idiomorph.esm.js"
 
 class Client {
 	constructor(events) {
@@ -34,7 +34,7 @@ class Browser {
 	static STYLESHEET_LINKS_SELECTOR = "link[rel=stylesheet]"
 
 	load(newDocument) {
-		morphdom(document.body, newDocument.body)
+		Idiomorph.morph(document.body, newDocument.body)
 	}
 
 	get stylesheets() {
