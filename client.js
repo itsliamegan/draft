@@ -39,7 +39,7 @@ class Browser {
 
 	get stylesheets() {
 		let links = document.querySelectorAll(Browser.STYLESHEET_LINKS_SELECTOR)
-		let stylesheets = links.map(link => new Stylesheet(link))
+		let stylesheets = Array.from(links).map(link => new Stylesheet(link))
 
 		return stylesheets
 	}
